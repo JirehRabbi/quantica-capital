@@ -11,28 +11,37 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// ✅ Updated: Check uniqueness using personal_data table
+// ✅ NEW: Generate sequential Acc_ID like A001, A002, A003...
 const generateAccId = async () => {
-  let accId;
-  let exists = true;
+  const [rows] = await pool.query(`
+    SELECT Acc_ID 
+    FROM personal_data 
+    WHERE Acc_ID LIKE 'A%' 
+    ORDER BY CAST(SUBSTRING(Acc_ID, 2) AS UNSIGNED) DESC 
+    LIMIT 1
+  `);
 
-  while (exists) {
-    accId = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const [rows] = await pool.query('SELECT 1 FROM personal_data WHERE Acc_ID = ?', [accId]);
-    exists = rows.length > 0;
+  let nextNumber = 1;
+
+  if (rows.length > 0) {
+    const lastId = rows[0].Acc_ID; // e.g., "A045"
+    const lastNumber = parseInt(lastId.substring(1)); // Extract "045" → 45
+    nextNumber = lastNumber + 1;
   }
 
-  return accId;
+  const paddedNumber = String(nextNumber).padStart(3, "0"); // "001", "046", etc.
+  return `A${paddedNumber}`; // Final: "A001", "A046", etc.
 };
 
-// Generate Contact ID without uniqueness check (optional enhancement later)
+// Optional fallback (not used anymore but retained just in case)
 const generateContactId = () => {
   return 'CON-' + (Math.random().toString(16).slice(2, 10)).toUpperCase();
 };
 
-// Short Funding ID (7 characters)
-const generateFundingId = () => {
-  return 'F' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+// Funding ID based on Acc_ID like A001-A
+const generateFundingId = (accId) => {
+  return `${accId}-A`;
 };
 
 // Generate Bank Account Number (10-digit number string)

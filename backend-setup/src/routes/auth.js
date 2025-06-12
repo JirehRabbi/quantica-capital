@@ -75,7 +75,7 @@ router.post(
       await connection.beginTransaction();
 
       const accId = await generateAccId();
-      const fundingId = await generateFundingId();
+      const fundingId = generateFundingId(accId);
       if (!fundingId) throw new Error("Failed to generate Funding_ID");
       const bankAccNo = generateBankAccNo();
 
